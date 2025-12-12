@@ -1,0 +1,20 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Resultats per "{{ text }}"{% endblock %}
+
+{% block contingut %}
+  <h2>Resultats de la cerca: “{{ text }}”</h2>
+
+  {% if resultats is not empty %}
+    {% for c in resultats %}
+      <ul class="llista">
+        <li><strong>Nom:</strong> {{ c.nom }}</li>
+        <li><strong>Telèfon:</strong> {{ c.telefon }}</li>
+        <li><strong>Email:</strong> {{ c.email }}</li>
+      </ul>
+      <hr>
+    {% endfor %}
+  {% else %}
+    <p>No s’han trobat contactes amb “{{ text }}”.</p>
+  {% endif %}
+{% endblock %}

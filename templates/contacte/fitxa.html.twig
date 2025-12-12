@@ -1,0 +1,18 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Fitxa de contacte{% endblock %}
+
+{% block contingut %}
+  <h2>Fitxa de contacte</h2>
+
+  {% if contacte %}
+    <ul class="llista">
+      <li><strong>Nom:</strong> {{ contacte.nom }}</li>
+      <li><strong>Telèfon:</strong> {{ contacte.telefon }}</li>
+      <li><strong>Email:</strong> {{ contacte.email }}</li>
+      <li><strong>Codi intern:</strong> {{ codi }}</li>
+    </ul>
+  {% else %}
+    <p>Contacte amb codi {{ codi }} no trobat.</p>
+  {% endif %}
+{% endblock %}
