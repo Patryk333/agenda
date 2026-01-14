@@ -1,7 +1,9 @@
 <?php
 namespace App\Controller;
 
-use App\Service\BDProva;
+use Doctrine\ORM\EntityManagerInterface;
+use App\Entity\Contacte;
+use App\Entity\Comarca;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Attribute\Route;
@@ -11,45 +13,59 @@ class ContacteController extends AbstractController
 {
 
     // Llista de contactes de mostra
-    private array $contactes;
+    private $repositori;
 
-    public function __construct(private BDProva $dades)
+    public function __construct(private EntityManagerInterface $gestor)
     {
-        $this->contactes = $dades->get();
+        $this->repositori = $this->gestor->getRepository(Contacte::class);
     }
 
     // Métode 1
-    #[Route('/{codi}', name:'fitxa', methods: ['GET'], requirements: ['codi' => '\d+'])]
-    public function fitxa(int $codi): Response
+    #[Route('/{codi}', name: 'fitxa', methods: ['GET'], requirements: ['codi' => '\d+'])]
+    public function fitxa(int $codi)
     {
         // 1) Buscar el contacte pel codi
-        $resultat = array_filter($this->contactes, fn($c) => $c['codi'] === $codi);
+        $contacte = $this->repositori->find($codi);
 
-        if (!$resultat) {
-            // En un cas real, podríem llançar una 404 o mostrar una vista d’error
+        if ($contacte)
+            return $this->render('contacte/fitxa.html.twig', [
+                'contacte' => $contacte,
+                'codi' => $codi
+            ]);
+        else
             return $this->render('contacte/fitxa.html.twig', [
                 'contacte' => null,
-                'codi' => $codi,
+                'codi' => $codi
             ]);
-        }
+    }
 
-        $contacte = array_shift($resultat);
+    #[Route('/crear', name: 'crear', methods: ['GET'])]
+    public function afegir()
+    {
+        $comarca = new Comarca();
+        $comarca->setNom("Ferland Mendy");
 
-        // 2) Passar dades a la plantilla Twig
-        return $this->render('contacte/fitxa.html.twig', [
-            'contacte' => $contacte,
-            'codi' => $codi,
-        ]);
+        $contacte = new Contacte();
+        $contacte->setNom("Juan Cuesta");
+        $contacte->setTelefon("659231544");
+        $contacte->setEmail("juan@simarro.org");
+        $contacte->setComarca($comarca);
+
+        // Indiquem que volem guardar aquest objecte
+        $this->gestor->persist($contacte);
+        $this->gestor->persist($comarca);
+        // S’executa la inserció
+        $this->gestor->flush();
+
+        return new Response("Contacte " . $contacte->getId() . " guardat.");
     }
 
     // Métode 2
     #[Route('/{text}', name: 'buscar', methods: ['GET'], requirements: ['text' => '[a-zA-Z]+'])]
     public function buscar(string $text): Response
     {
-        // 1) Filtrar per nom (coincidència parcial, sense tindre en compte maj./min.)
-        $resultat = array_filter($this->contactes, function ($c) use ($text) {
-            return stripos($c['nom'], $text) !== false;
-        });
+        // 1) Filtrar pel mètode creat al repositori
+        $resultat = $this->repositori->findByName($text);
 
         // 2) Passar la llista (pot ser buida) a la vista
         return $this->render('contacte/cerca.html.twig', [
@@ -57,4 +73,6 @@ class ContacteController extends AbstractController
             'resultats' => $resultat,
         ]);
     }
+
+
 }
